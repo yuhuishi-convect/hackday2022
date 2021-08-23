@@ -1,0 +1,86 @@
+ml_sum_model:
+  cv_param:
+    split_train_frac: 0.8
+    split_type: time_split
+    train_folder_cnt: 3
+  dt_feature_extraction_params:
+    - feature_name: isoweekday
+    - feature_name: is_workday_CN
+    - feature_name: days_to_next_holiday_CN
+    - feature_name: days_since_last_holiday_CN
+    - feature_name: days_since_last_workday_CN
+  encoder_param:
+    autoOneHotThreshold: 5
+  impute_param:
+    fill_value: 0
+    strategy: constant
+  main_ts_rolling_params:
+    - rolling_method: mean
+      size:
+        - 1
+        - 3
+        - 5
+        - 7
+        - 14
+        - 21
+        - 28
+        - 90
+        - 120
+    - rolling_method: lag
+      size:
+        - 7
+        - 14
+        - 21
+        - 28
+    - rolling_method: std
+      size:
+        - 3
+        - 5
+        - 7
+        - 14
+        - 21
+        - 28
+  ml_model_params:
+    - method_ind: lgb
+      param_opt_ind: random
+      param_model:
+        objective: tweedie
+        tweedie_variance_power: 1.4
+  model_select_method: manual
+  model_select_param:
+    metrics_funcs:
+      - mae
+      - mse
+      - mad
+    only_use_out_sample: true
+  other_ts_rolling_params:
+    - rolling_method: mean
+      size:
+        - 1
+        - 7
+        - 14
+        - 21
+        - 28
+  scaler_param:
+    scaler_method: MaxAbs
+  train_expand_param:
+    - long_jump_interval_list: [30, 60, 90]
+      num_short_jumps: 10
+      short_jump_interval: 3
+    - long_jump_interval_list: [30, 60, 90]
+      num_short_jumps: 10
+      short_jump_interval: 5
+    - long_jump_interval_list: [30, 60, 90]
+      num_short_jumps: 6
+      short_jump_interval: 7
+  ts_window_param:
+    time_window: 60
+predict_target_params:
+  - predict_horizon: 7
+    predict_offset: 0
+quantile_model_alpha_params:
+  - 0.1
+  - 0.3
+  - 0.7
+  - 0.9
+run_ml_quantile_model: false
