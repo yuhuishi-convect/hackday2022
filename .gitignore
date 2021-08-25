@@ -1,0 +1,4 @@
+sagemaker/local_test/test_dir/model/*
+sagemaker/local_test/test_dir/output/*
+
+**/.venv

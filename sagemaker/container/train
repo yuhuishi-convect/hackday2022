@@ -1,0 +1,159 @@
+#!/usr/bin/env python
+
+import json
+import os
+import sys
+import traceback
+import pathlib
+import tempfile
+import yaml
+import pprint
+from algoflow.app.forecast.cli.run_forecast import prepare_convect_data, run_convect_fit
+
+# These are the paths to where SageMaker mounts interesting things in your container.
+
+prefix = '/opt/ml/'
+
+input_path = prefix + 'input/data'
+output_path = os.path.join(prefix, 'output')
+model_path = os.path.join(prefix, 'model')
+param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
+
+ts_channel_name='target_ts'
+item_meta_channel_name='item_meta'
+related_ts_channel_name='related_ts'
+config_channel_name='config'
+
+ts_path = os.path.join(input_path, ts_channel_name)
+item_meta_path = os.path.join(input_path, item_meta_channel_name)
+related_ts_path = os.path.join(input_path, related_ts_channel_name)
+config_path = os.path.join(input_path, config_channel_name)
+
+
+def get_file_under_folder(folder_path: str):
+    folder = pathlib.Path(folder_path)
+    file_iter = folder.iterdir()
+    try:
+        file_path = next(file_iter)
+        return str(file_path)
+    except StopIteration:
+        return None 
+
+
+# The function to execute the training.
+def train():
+    print('Starting the training.')
+    try:
+        # Read in any hyperparameters that the user passed with the training job
+        with open(param_path, 'r') as tc:
+            training_params = json.load(tc)
+            pprint.pprint("Training params: {}".format(training_params))
+            # we assume training_params contains schema and config setups
+
+        # parse the input data
+        # check if target ts is there
+        ts_file_path = get_file_under_folder(ts_path)
+        meta_file_path = get_file_under_folder(item_meta_path)
+        related_ts_file_path = get_file_under_folder(related_ts_path)
+        config_file_path = get_file_under_folder(config_path)
+
+        if not ts_file_path:
+            raise ValueError(('There are no files in {}.\n' +
+                              'This usually indicates that the channel ({}) was incorrectly specified,\n' +
+                              'the data specification in S3 was incorrectly specified or the role specified\n' +
+                              'does not have permission to access the data.').format(ts_file_path, ts_channel_name))
+
+        # parameter parsing
+        key_col = training_params["key_col"]
+        time_col = training_params["time_col"]
+        value_col = training_params["value_col"]
+
+        time_format = training_params.get("time_format")
+        freq = training_params.get("freq", "D")
+
+        # constructing the schema on the fly
+        schemas = []
+
+        ts_schema = {
+                "type": "TARGET_TIME_SERIES",
+                "path": ts_file_path,
+                "format": "csv",
+                "schema": {"key": [key_col], "time": time_col, "values": [value_col]},
+            }
+        if time_format:
+            ts_schema["time_format"] = time_format
+
+        schemas.append(ts_schema)
+
+        if meta_file_path:
+            meta_schema = {
+                "type": "ITEM_METADATA",
+                "path": meta_file_path,
+                "format": "csv",
+                "schema": {"key": [key_col]},
+            }
+            schemas.append(meta_schema)
+
+        if related_ts_file_path:
+            related_ts_schema = {
+                "type": "RELATED_TIME_SERIES",
+                "path": related_ts_file_path,
+                "format": "csv",
+                "schema": {"key": [key_col], "time": time_col},
+            }
+            if time_format:
+                related_ts_schema["time_format"] = time_format
+
+            schemas.append(related_ts_schema)
+
+        # write the schema file to a tempfile
+        temp_schema_file = tempfile.NamedTemporaryFile(mode="w", delete=False)
+        yaml.safe_dump(schemas, temp_schema_file)
+        
+        schema_path = temp_schema_file.name
+
+        pprint.pprint("Schemas generated: {}".format(schemas))
+        print("Temp schema file: {}".format(schema_path))
+
+        temp_schema_file.close()
+        # invoke the main training process
+
+        print("Start preparing the data")
+        # start the data preparing process
+        converted_data_path = tempfile.mkdtemp()
+        prepare_convect_data.callback(
+            schema=schema_path,
+            output=converted_data_path,
+            freq=freq,
+            scheduler=None,  # using local cluster
+            run_id=None,
+            workspace=None,
+        )
+
+        # start the fitting process
+        run_convect_fit.callback(
+            data=converted_data_path,
+            config=config_file_path,
+            scheduler=None,  # using local cluster
+            workspace=model_path,
+            run_id="fit-run",
+        )
+
+        print('Training complete.')
+
+    except Exception as e:
+        # Write out an error file. This will be returned as the failureReason in the
+        # DescribeTrainingJob result.
+        trc = traceback.format_exc()
+        with open(os.path.join(output_path, 'failure'), 'w') as s:
+            s.write('Exception during training: ' + str(e) + '\n' + trc)
+        # Printing this causes the exception to be in the training job logs, as well.
+        print('Exception during training: ' + str(e) + '\n' + trc, file=sys.stderr)
+        # A non-zero exit code causes the training job to be marked as Failed.
+        sys.exit(255)
+
+if __name__ == '__main__':
+    train()
+
+    # A zero exit code causes the job to be marked a Succeeded.
+    sys.exit(0)
