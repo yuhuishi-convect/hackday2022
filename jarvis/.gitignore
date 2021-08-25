@@ -1,0 +1,5 @@
+ent/*
+go.sum
+*.db
+!ent/schema/
+.DS_Store
