@@ -77,8 +77,8 @@ func (User) Fields() []ent.Field {
 * Send DELETE request to http://localhost;8080/api/user/1 to delete the `id == 1` User record
 
 ## TODO
-[ ] remove the dependency of entgo
-[ ] support model definition in metadata file
+* [ ] remove the dependency of entgo
+* [ ] support model definition in metadata file
 ```
 type Employee mix Entity schema name "employee" {
   id: string
