@@ -1,9 +1,9 @@
-# Convect Hackday 2021
+# Convect Hackday 2022
 
 ## Logistics 
 
-* Time: 2021-08-20 ~ 2021-08-24
-* Demo day: 2021-08-25 at 8pm PDT
+* Time: 2021-08-15 ~ 2021-08-19
+* Demo day: 2021-08-15 at 9am Beijing Time
 * Locations: remote or Spaces Santana Row
 
 
@@ -11,6 +11,8 @@
 
 ### Topics to work on 
 Everythin related to logistics / supply chain / enterprises data / internal productivity tools are welcome. 
+
+[Repo to the previous year projects](https://github.com/convect-ai/hackday2021)
 
 Some example projects:
 * Integration of Convect offerings with external systems
@@ -36,6 +38,8 @@ Feel free to invite external attendees that may be interested in building releva
 Submit a PR with your code / README / demo videos (under a subfolder) to repo: https://github.com/convect-ai/hackday2021/ . 
 Include a short summary on what you have built and how to run your code for others.
 
+This is an [example](https://github.com/convect-ai/hackday2021/pull/1)
+
 ### How to demo your work
-On 2021-08-25, prepare a 10 min short demo to showcase the thing you have built.
+On 2022-08-19, prepare a 10 min short demo to showcase the thing you have built.
 
