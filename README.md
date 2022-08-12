@@ -35,7 +35,7 @@ You can work independently or with team members on the projects.
 Feel free to invite external attendees that may be interested in building relevant applications.
 
 ### How to submit your project
-Submit a PR with your code / README / demo videos (under a subfolder) to repo: https://github.com/convect-ai/hackday2021/ . 
+Submit a PR with your code / README / demo videos (under a subfolder) to repo: https://github.com/convect-ai/hackday2022/ . 
 Include a short summary on what you have built and how to run your code for others.
 
 This is an [example](https://github.com/convect-ai/hackday2021/pull/1)
